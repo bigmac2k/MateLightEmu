@@ -16,13 +16,13 @@ import System.IO.Unsafe (unsafePerformIO)
 import Data.Maybe
 import Data.Foldable
 import System.IO (Handle, hPutStrLn, stdin, stdout, stderr, hSetBuffering, BufferMode(NoBuffering))
-import qualified System.Posix.Signals as Signals
 
 import Types
 import StaticFiles
 import CmdArgs
 import qualified StaticPages
 import qualified DropPriv as Priv
+import qualified Signals
 
 {-# NOINLINE logLock #-}
 logLock :: MVar ()
@@ -133,8 +133,7 @@ main = do
   staticFiles `deepseq` putStrLn "done"
   putStrLn $ "open http://" ++ ip args ++ ":" ++ show (port args) ++ "\nand stream crap to " ++ ip args ++ ":" ++ show (mateport args) ++ " udp"
   continue <- newTVarIO True
-  _ <- Signals.installHandler Signals.sigINT (Signals.CatchOnce $ atomically $ writeTVar continue False) Nothing
-  _ <- Signals.installHandler Signals.sigTERM (Signals.CatchOnce $ atomically $ writeTVar continue False) Nothing
+  Signals.installAbortSignal $ atomically $ writeTVar continue False
   Sock.withSocketsDo $ bracket (mkSock Sock.Datagram (ip args) (mateport args)) Sock.close $ \udpSocket -> bracket (mkSock Sock.Stream (ip args) (port args)) Sock.close $ \websocket -> do
     Sock.listen websocket 5
     when (isJust $ uidgid args) $ do

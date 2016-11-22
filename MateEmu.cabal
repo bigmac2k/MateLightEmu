@@ -37,7 +37,7 @@ build-type:          Simple
 
 -- Extra files to be distributed with the package, such as examples or a 
 -- README.
---extra-source-files:  ChangeLog.md
+extra-source-files:  linux/DropPriv.hs,win/DropPriv.hs
 
 -- Constraint on the version of Cabal needed to build this package.
 cabal-version:       >=1.10
@@ -58,6 +58,11 @@ executable MateEmu
   
   -- Directories containing source files.
   hs-source-dirs:      .
+
+  if os(linux)
+    hs-source-dirs:    linux
+  if os(windows)
+    hs-source-dirs:    win
   
   -- Base language which the package is written in.
   default-language:    Haskell2010
