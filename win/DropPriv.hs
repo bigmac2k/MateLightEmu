@@ -1,6 +1,9 @@
 module DropPriv (status, PrivStatus(..), dropUidGid) where
 
-data PrivStatus = PrivStatus deriving (Show, Eq)
+data PrivStatus = PrivStatus deriving Eq
+
+instance Show PrivStatus where
+    show PrivStatus = "NOOP for Windows. Privileges not dropped!"
 
 status :: IO PrivStatus
 status = return PrivStatus
