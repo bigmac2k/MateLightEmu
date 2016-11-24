@@ -64,11 +64,15 @@ executable MateEmu
 
   if os(linux)
     build-depends:     unix >=2.7 && <2.8
+  if os(darwin)
+    build-depends:     unix >=2.7 && <2.8
   
   -- Directories containing source files.
   hs-source-dirs:      .
 
   if os(linux)
+    hs-source-dirs:    linux
+  if os(darwin)
     hs-source-dirs:    linux
   if os(windows)
     hs-source-dirs:    win
