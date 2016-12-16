@@ -15,7 +15,8 @@ import Control.DeepSeq
 import System.IO.Unsafe (unsafePerformIO)
 import Data.Maybe
 import Data.Foldable
-import System.IO (Handle, hPutStrLn, stdin, stdout, stderr, hSetBuffering, BufferMode(NoBuffering))
+import System.IO (Handle, hPutStrLn, stdin, stdout, stderr, hSetBuffering, BufferMode(NoBuffering), withFile, IOMode(AppendMode))
+import Data.Time.Clock (getCurrentTime)
 
 import Types
 import StaticFiles
@@ -95,9 +96,14 @@ runMateEmu margs udpSocket websocket continue = do
   let websocketPage = newDisplay (atomically $ readTVar clients) (\display -> atomically $ modifyTVar displays (display :)) (return ())
   forkIO $ Warp.runSettingsSocket (Warp.setPort 8080 Warp.defaultSettings) websocket $ WWSock.websocketsOr WSock.defaultConnectionOptions websocketPage mainPage
   masterChan <- newChan
-  forkIO $ forever $ do
-    bs <- readChan masterChan
-    atomically $ send displays bs
+  forkIO $ do
+    let loop mfh = forever $ do
+          bs <- readChan masterChan
+          maybe (return ()) (\fh-> getCurrentTime >>= \time -> hPutStrLn fh $ show time ++ show bs) mfh
+          atomically $ send displays bs
+    case dumpFile margs of
+      Just file -> mPutStrLn "dumping crap to file" >> withFile file AppendMode (loop . Just)
+      _ -> loop Nothing
   forkIO $ forever $ do
     msg <- receive udpSocket
     atomically $ touchSeen clients $ source msg
@@ -136,9 +142,11 @@ main = do
   Signals.installAbortSignal $ atomically $ writeTVar continue False
   Sock.withSocketsDo $ bracket (mkSock Sock.Datagram (ip args) (mateport args)) Sock.close $ \udpSocket -> bracket (mkSock Sock.Stream (ip args) (port args)) Sock.close $ \websocket -> do
     Sock.listen websocket 5
-    when (isJust $ uidgid args) $ do
-      Priv.dropUidGid (Left $ fst $ fromJust $ uidgid args) (Left $ snd $ fromJust $ uidgid args)
-      Priv.status >>= \stat -> mPutStrLn $ "dropped privs to: " ++ show stat
+    case uidgid args of
+      Just (uid, gid) -> do
+        Priv.dropUidGid (Left uid) (Left gid)
+        Priv.status >>= \stat -> mPutStrLn $ "dropped privs to: " ++ show stat
+      _ -> return ()
     runMateEmu args udpSocket websocket continue
   where
   mkSock ptype addr port = do
