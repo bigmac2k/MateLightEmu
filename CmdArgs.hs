@@ -17,7 +17,7 @@ mateArgs = MateArgsMaybe {
     ,mport = def &= name "p" &= help "bind to this port (web)"
     ,mip = def &= name "i" &= help "bind to this ip"
     ,mmateport = def &= name "m" &= help "bind to this port (crap)"
-    ,mdumpFile = def &= name "f" &= help "dump all incoming crap to this file line by line with ip:port in front"
+    ,mdumpFile = def &= name "f" &= help "dump all incoming crap to this file line by line (use cabal flag \"compression\" to enable lzma compression)"
 }
 
 data MateArgs = MateArgs {

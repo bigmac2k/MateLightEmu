@@ -17,6 +17,13 @@ import Data.Maybe
 import Data.Foldable
 import System.IO (Handle, hPutStrLn, stdin, stdout, stderr, hSetBuffering, BufferMode(NoBuffering), withFile, IOMode(AppendMode))
 import Data.Time.Clock (getCurrentTime)
+import qualified Data.Conduit as Cond
+import qualified Data.Conduit.Binary as Cond
+import qualified Compress as Cond
+import qualified Control.Monad.Trans.Resource as Cond
+import qualified Control.Concurrent.STM.TBMChan as TBMChan
+import qualified Data.Conduit.TMChan as TBMChan
+import qualified Data.ByteString.Char8 as BS
 
 import Types
 import StaticFiles
@@ -97,12 +104,19 @@ runMateEmu margs udpSocket websocket continue = do
   forkIO $ Warp.runSettingsSocket (Warp.setPort 8080 Warp.defaultSettings) websocket $ WWSock.websocketsOr WSock.defaultConnectionOptions websocketPage mainPage
   masterChan <- newChan
   forkIO $ do
-    let loop mfh = forever $ do
+    let loop mchan = forever $ do
           bs <- readChan masterChan
-          maybe (return ()) (\fh-> getCurrentTime >>= \time -> hPutStrLn fh $ show time ++ show bs) mfh
+          maybe (return ()) (\chan -> getCurrentTime >>= \time -> atomically (TBMChan.writeTBMChan chan $ BS.pack $ show time ++ ":" ++ show bs ++ "\n")) mchan
           atomically $ send displays bs
     case dumpFile margs of
-      Just file -> mPutStrLn "dumping crap to file" >> withFile file AppendMode (loop . Just)
+      Just file -> do
+        mPutStrLn $ "dumping crap to file: " ++ file
+        chan <- TBMChan.newTBMChanIO 20
+        withFile file AppendMode $ \fh -> do
+          let sink = Cond.sinkHandle fh
+              source = TBMChan.sourceTBMChan chan
+          forkIO $ Cond.runResourceT $ source Cond.$$ Cond.compress Cond.=$= sink
+          loop $ Just $ chan
       _ -> loop Nothing
   forkIO $ forever $ do
     msg <- receive udpSocket
