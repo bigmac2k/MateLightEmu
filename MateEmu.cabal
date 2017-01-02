@@ -68,7 +68,7 @@ executable MateEmu
   if os(linux) || os(darwin)
     build-depends:     unix >=2.7 && <2.8
     hs-source-dirs:    linux
-  if (os(linux) || os(darwin)) && flag(compression)
+  if flag(compression)
     build-depends:     lzma-conduit >=1.1 && <1.2
     hs-source-dirs:    docompress
   else
