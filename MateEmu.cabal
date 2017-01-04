@@ -69,7 +69,7 @@ executable MateEmu
     build-depends:     unix >=2.7 && <2.8
     hs-source-dirs:    linux
   if flag(compression)
-    build-depends:     lzma-conduit >=1.1 && <1.2
+    build-depends:     lz4-conduit
     hs-source-dirs:    docompress
   else
     hs-source-dirs:    nocompress
