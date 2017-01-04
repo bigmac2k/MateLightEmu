@@ -9,7 +9,7 @@ packages:
 - '.'
 - location:
     git: https://github.com/bigmac2k/lz4-conduit
-    commit: 6c6172dbc8593a2515e84db4d317b72ab72e0d32
+    commit: 8d043d75aa471e2f57b03632f68ed07059eb3466
   extra-dep: true
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: []
