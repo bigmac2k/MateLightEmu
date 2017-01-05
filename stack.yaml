@@ -7,13 +7,9 @@ resolver: lts-7.14
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
-- location:
-    git: https://github.com/bigmac2k/lz4-conduit
-    commit: 66b3059247e3b243c1d70f62955da2824652dda4
-  extra-dep: true
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps: [lz4-conduit-0.2]
 
 # Override default flag values for local packages and extra-deps
 flags: {}
